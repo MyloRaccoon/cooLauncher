@@ -1,11 +1,11 @@
-use std::process::Command;
-use coolauncher::{domain, saver};
-use domain::Application;
-use saver::{Saver, LauncherSave};
+use coolauncher::domain::Application;
+use coolauncher::saver::{Saver, LauncherSave};
 use eframe::egui;
 use egui::{CentralPanel, ScrollArea, TopBottomPanel, ViewportBuilder, Visuals};
 
 fn main() -> Result<(), eframe::Error> {
+    let mut launcher = Launcher::new();
+    launcher.load(Saver::load());
     let options = eframe::NativeOptions{
         viewport: ViewportBuilder::default()
             .with_inner_size([1200., 720.])
@@ -16,7 +16,7 @@ fn main() -> Result<(), eframe::Error> {
         "cooLauncher",
         options,
         Box::new(|cc| {
-            Ok(Box::new(Launcher::new(cc)))
+            Ok(Box::new(launcher.set_visuals_dark(cc)))
         }),
     )
 }
@@ -30,9 +30,13 @@ pub struct Launcher {
 }
 
 impl Launcher {
-    fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        cc.egui_ctx.set_visuals(Visuals::dark());
+    fn new() -> Self {
         Default::default()
+    }
+
+    fn set_visuals_dark(self, cc: &eframe::CreationContext<'_>) -> Self {
+        cc.egui_ctx.set_visuals(Visuals::dark());
+        self
     }
 
     fn add_app(&mut self, app: Application) {
@@ -53,17 +57,11 @@ impl Launcher {
 
 impl eframe::App for Launcher {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if ctx.input(|i| i.viewport().close_requested()) {
+            let _ = Saver::save(&mut self.apps);
+        }
         TopBottomPanel::top("top_panel0").show(ctx, |ui| {
             ui.heading("cooLauncher");
-            
-            ui.horizontal(|ui| {
-                if ui.button("save").clicked() {
-                    let _ = Saver::save(&mut self.apps);
-                }
-                if ui.button("load").clicked() {
-                    self.load(Saver::load());
-                }
-            });
 
             ui.horizontal(|ui| {
                 ui.label("Name: ");
@@ -78,9 +76,12 @@ impl eframe::App for Launcher {
                 ui.add(egui::TextEdit::singleline(&mut self.c_app_name));
                 ui.add(egui::TextEdit::singleline(&mut self.c_app_command));
                 ui.add(egui::TextEdit::singleline(&mut self.c_app_arg));
-
+                let mut arg_vec = Vec::new();
+                if self.c_app_arg != String::default() {
+                    arg_vec.push(self.c_app_arg.clone());
+                }
                 if ui.button("+ Add application").clicked() {
-                    self.add_app(Application::from_strings(self.c_app_name.clone(), self.c_app_command.clone(), &[self.c_app_arg.clone()]));
+                    self.add_app(Application::from_strings(self.c_app_name.clone(), self.c_app_command.clone(), &arg_vec));
                 }
             });
         });
@@ -90,23 +91,6 @@ impl eframe::App for Launcher {
                     app.show(ui)
                 }
             });
-            // ui.ctx().request_repaint();
-            // ui.label("press/hold/release A");
-            // ScrollArea::vertical().stick_to_bottom(true).show(ui, |ui| {
-            //     ui.label(&self.text);
-            // });
-            // if ctx.input(|i| i.key_pressed(Key::C)) {
-            //     self.text.clear();
-            // } else if ctx.input(|i| i.key_pressed(Key::A)) {
-            //     self.text.push_str("\nPressed");
-            // } else if ctx.input(|i| i.key_down(Key::A)) {
-            //     self.text.push_str("\nDown");
-            //     // update is not called every frame but only when repaint is needed
-            //     // we can force it with this: 
-                
-            // } else if ctx.input(|i| i.key_released(Key::A)) {
-            //     self.text.push_str("\nReleased");
-            // }
         });
     }
 }

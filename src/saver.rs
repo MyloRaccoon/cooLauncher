@@ -25,7 +25,7 @@ impl ApplicationSave {
 	}
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct LauncherSave {
 	pub apps: Vec<ApplicationSave>
 }
@@ -53,22 +53,16 @@ impl Saver {
 	}
 
 	pub fn load() -> LauncherSave {
-		let mut file = File::open(self::FILE_PATH).unwrap();
-		let mut data_bytes = vec![];
-		let _ = file.read_to_end(&mut data_bytes);
-		let launcher_save = from_slice(&data_bytes);
-		launcher_save.unwrap()
+		match File::open(self::FILE_PATH) {
+			Ok(mut file) => {
+				let mut data_bytes = vec![];
+				let _ = file.read_to_end(&mut data_bytes);
+				let launcher_save = from_slice(&data_bytes);
+				launcher_save.unwrap()
+			}
+			Err(_) => {
+				LauncherSave::default()
+			}
+		}
 	}
 }
-
-// let mut file = File::create(self.filepath.clone()).await?;
-// let machine_dao = VotingMachineDao::from(machine);
-// let data = serde_json::to_string(&machine_dao)?;
-// file.write_all(data.as_bytes()).await?;
-// Ok(())
-
-// let mut file = File::open(self.filepath.clone()).await?;
-// let mut data_bytes = vec![];
-// file.read_to_end(&mut data_bytes).await?;
-// let machine_dao: VotingMachineDao = from_slice(&data_bytes)?;
-// Ok(VotingMachine::from(machine_dao))
