@@ -2,6 +2,8 @@ use coolauncher::domain::Application;
 use coolauncher::saver::{Saver, LauncherSave};
 use eframe::egui;
 use egui::{CentralPanel, ScrollArea, SidePanel, TopBottomPanel, ViewportBuilder, Visuals, Window};
+use std::{ffi::OsStr, path::{Path, PathBuf}};
+use egui_file::FileDialog;
 
 fn main() -> Result<(), eframe::Error> {
     let mut launcher = Launcher::new();
@@ -21,7 +23,7 @@ fn main() -> Result<(), eframe::Error> {
     )
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct AddAppPage {
     open: bool,
     c_app_name: String,
@@ -33,11 +35,11 @@ struct AddAppPage {
 struct AddWineAppPage {
     open: bool,
     c_app_name: String,
-    c_app_exe_name: String,
-    c_app_exe_path: String,
+    c_file_exe: Option<PathBuf>,
+    open_file_dialog: Option<FileDialog>,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Launcher {
     apps: Vec<Application>,
     add_app_page: AddAppPage,
@@ -123,6 +125,7 @@ impl eframe::App for Launcher {
                         println!("name taken");
                     } else {
                         self.apps.push(Application::from_strings(self.add_app_page.c_app_name.clone(), self.add_app_page.c_app_command.clone(), &arg_vec));
+                        let _ = Saver::save(&mut self.apps);
                         // CLOSE WINDOW
                     }
                 }
@@ -135,24 +138,48 @@ impl eframe::App for Launcher {
                 ui.horizontal(|ui| {
                     ui.label("Name: ");
                     ui.add_space(250.);
-                    ui.label(".exe name: ");
-                    ui.add_space(223.);
-                    ui.label("path/to/file: ");
+                    ui.label(".exe file:");
                 });
 
                 ui.horizontal(|ui| {
                     ui.add(egui::TextEdit::singleline(&mut self.add_wine_app_page.c_app_name));
-                    ui.add(egui::TextEdit::singleline(&mut self.add_wine_app_page.c_app_exe_name));
-                    ui.add(egui::TextEdit::singleline(&mut self.add_wine_app_page.c_app_exe_path));
+                    match self.add_wine_app_page.c_file_exe.clone() {
+                        Some(path_buf) => ui.label(path_buf.as_path().to_str().unwrap()),
+                        None => ui.label("Please choose a .exe file"),
+                    };
+                    
+                    if ui.button("Choose a .exe").clicked() {
+                        let filter = Box::new({
+                            let ext = Some(OsStr::new("exe"));
+                            move |path: &Path| -> bool { path.extension() == ext }
+                        });
+                        let mut dialog = FileDialog::open_file(self.add_wine_app_page.c_file_exe.clone()).show_files_filter(filter);
+                        dialog.open();
+                        self.add_wine_app_page.open_file_dialog = Some(dialog);
+                    }
+
+                    if let Some(dialog) = &mut self.add_wine_app_page.open_file_dialog {
+                        if dialog.show(ctx).selected() {
+                            if let Some(file) = dialog.path() {
+                                self.add_wine_app_page.c_file_exe = Some(file.to_path_buf());
+                            }
+                        }
+                    }
                 });
                 if ui.button("+ Add application").clicked() {
+                    let app_name = self.add_wine_app_page.c_app_name.clone();
+                    let file_path_buf = self.add_wine_app_page.c_file_exe.clone().unwrap();
+                    let file_path = file_path_buf.as_path();
+                    let exe_name = file_path.file_name().unwrap();
+                    let dir_path = file_path.parent().unwrap();
                     self.apps.push(
                         Application::wine_app(
-                            self.add_wine_app_page.c_app_name.clone(), 
-                            self.add_wine_app_page.c_app_exe_path.clone(),
-                            self.add_wine_app_page.c_app_exe_name.clone() 
+                            app_name,
+                            dir_path.to_str().unwrap().to_string(),
+                            exe_name.to_str().unwrap().to_string()
                         )
                     );
+                    let _ = Saver::save(&mut self.apps);
                     // CLOSE WINDOW
                 }
             });
@@ -166,10 +193,15 @@ impl eframe::App for Launcher {
             ui.add_space(10.);
             ui.horizontal(|ui| {
                 if ui.button("+ Add a Custom App").clicked() {
+                    self.add_app_page.c_app_name = String::new();
+                    self.add_app_page.c_app_command = String::new();
+                    self.add_app_page.c_app_arg = String::new();
                     self.add_app_page.open = true;
                 }
 
                 if ui.button("+ Add a Wine App").clicked() {
+                    self.add_wine_app_page.c_app_name = String::new();
+                    self.add_wine_app_page.c_file_exe = None;
                     self.add_wine_app_page.open = true;
                 }
             });
