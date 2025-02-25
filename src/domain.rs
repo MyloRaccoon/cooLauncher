@@ -1,38 +1,65 @@
-use std::process::{Command, Stdio};
-use std::fs::File;
-use std::io::Write;
-use crate::saver::ApplicationSave;
+use std::process::{Command, Output};
+use serde::{Serialize, Deserialize};
+use std::io::{self, Write};
 
 const WINE_PATH: &str = "/opt/wine-ge-custom-opt/bin/wine";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoolCommand {
+	pub program: String,
+	pub args: Vec<String>,
+}
+
+impl CoolCommand {
+    	
+    pub fn new(program: String, args: &[String]) -> Self {
+    	let mut args_vec: Vec<String> = Vec::new();
+    	for arg in args {
+    		args_vec.push(arg.clone());
+    	}
+    	Self { program: program.to_string(), args: args_vec }
+    }
+
+    pub fn spawn(&self) -> Output {
+    	let mut command = Command::new(self.program.clone());
+    	for arg in self.args.clone() {
+    		command.arg(arg);
+    	}
+    	command.output().expect("idk fuck u")
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AppType {
 	Custom,
 	Wine,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Application {
 	pub name: String,
-	pub command: Command,
 	pub app_type: AppType,
+	pub command: Option<CoolCommand>,
+	pub exe_path: Option<String>,
+	pub exe_name: Option<String>,
+}
+
+pub struct WineApp {
+	pub name: String,
+	pub exe_path: String,
+	pub exe_name: String,
 }
 
 impl Default for Application {
 	
 	fn default() -> Self {
-		Self { name: "".to_string(), command: Command::new(""), app_type: AppType::Custom }
-	}
-}
-
-impl Clone for Application {
-	
-	fn clone(&self) -> Self {
-		let mut command = Command::new(self.command.get_program());
-		for arg in self.command.get_args() {
-			command.arg(arg);
+		Self { 
+			name: "".to_string(), 
+			app_type: AppType::Custom,
+			command: Some(CoolCommand::new("".to_string(), &[])), 
+			exe_path: None,
+			exe_name: None,
 		}
-		Self { name: self.name.clone(), command, app_type: self.app_type.clone() }
 	}
 }
 
@@ -40,60 +67,47 @@ impl Clone for Application {
 impl Application {
 
 	pub fn from_strings(name: String, command: String, args: &[String]) -> Self {
-		let mut command = Command::new(command);
-		command.args(args);
+		let command = CoolCommand::new(command, args);
 		let app_type = AppType::Custom;
-		Self { name, command, app_type }
+		Self { 
+			name,
+			app_type,
+			command: Some(command),
+			exe_path: None,
+			exe_name: None,
+		}
 	}
 
 	pub fn wine_app(name: String, exe_path: String, exe_name: String) -> Self {
-		let cd_command_str = &format!("cd {exe_path}");
-		let command_str = &format!("{} {}", self::WINE_PATH, exe_name);
-		let sh_name = name.replace(" ", "_");
-		Self::create_bash_script(sh_name.clone(), vec![cd_command_str, command_str]);
-		let sh_command = format!("./resources/bash_scripts/{}.sh", sh_name);
-		let mut command = Command::new("sh");
-		command.arg(sh_command);
-		let app_type = AppType::Wine;
-		Self { name, command, app_type }
-	}
-
-	pub fn from_save(save: ApplicationSave) -> Self {
-		Self::from_strings(save.name, save.command, &save.args)
+		Self {
+			name,
+			app_type: AppType::Wine,
+			command: None,
+			exe_path: Some(exe_path),
+			exe_name: Some(exe_name),
+		}
 	}
 
 	pub fn launch(&mut self) {
-		let _ = Command::new("echo")
-			.arg("Launching")
-			.arg(self.name.clone())
-			.spawn();
-		let output = self.command
-	        .stdout(Stdio::piped())
-	        .output()
-	        .expect("couldn't start the command");
-
-	    let stdout = String::from_utf8(output.stdout).unwrap();
-
-    	println!("{}", stdout);
-		
+		println!("Launching {}", self.name.clone());
+		let output: Output = match self.app_type {
+			AppType::Custom => {
+				self.command.clone().expect("couldn't spawn command").spawn()
+			}
+			AppType::Wine => {
+				Command::new(self::WINE_PATH)
+					.arg(self.exe_name.clone().expect("couldn't get exe"))
+					.current_dir(self.exe_path.clone().expect("couldn't get directory"))
+					.output().expect("Error: couldn't launch this wine application")
+			}
+		};
+		let _ = io::stdout().write_all(&output.stdout);
+        let _ = io::stderr().write_all(&output.stderr);
 	}
 
 	pub fn show(&mut self, ui: &mut egui::Ui) {
 		if ui.button(&self.name).clicked() {
 			self.launch();
 		}
-	}
-
-	fn create_bash_script(name: String, commands: Vec<&str>) {
-		let file_path = format!("resources/bash_scripts/{name}.sh");
-		let mut file = File::create(file_path.clone()).unwrap();
-		for command in commands {
-			let _ = file.write_all(command.as_bytes());
-			let _ = file.write_all("\n".as_bytes());
-		}
-		let _ = Command::new("chmod")
-			.arg("+x")
-			.arg(file_path)
-			.spawn();
 	}
 }

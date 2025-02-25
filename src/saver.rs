@@ -6,28 +6,9 @@ use serde_json::from_slice;
 
 const FILE_PATH: &str = "save.json";
 
-#[derive(Serialize, Deserialize)]
-pub struct ApplicationSave {
-	pub name: String,
-	pub command: String,
-	pub args: Vec<String>,
-}
-
-impl ApplicationSave {
-	fn from_application(app: &Application) -> Self {
-		let name = app.name.clone();
-		let command = app.command.get_program().to_str().unwrap().to_string();
-		let mut args = Vec::new();
-		for arg in app.command.get_args() {
-			args.push(arg.to_str().unwrap().to_string());
-		}
-		Self { name, command, args }
-	}
-}
-
 #[derive(Serialize, Deserialize, Default)]
 pub struct LauncherSave {
-	pub apps: Vec<ApplicationSave>
+	pub apps: Vec<Application>
 }
 
 impl LauncherSave {
@@ -35,7 +16,7 @@ impl LauncherSave {
 	fn from_vec(apps: &mut [Application]) -> Self {
 		let mut app_saves = Vec::new();
 		for app in apps.iter_mut() {
-			app_saves.push(ApplicationSave::from_application(app));
+			app_saves.push(app.clone());
 		}
 		Self { apps: app_saves }
 	}

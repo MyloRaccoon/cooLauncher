@@ -71,8 +71,8 @@ impl Launcher {
 
     fn load(&mut self, save: LauncherSave) {
         self.clear();
-        for app_save in save.apps {
-            self.add_app(Application::from_save(app_save));
+        for app in save.apps {
+            self.add_app(app);
         }
     }
 
