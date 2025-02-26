@@ -1,8 +1,7 @@
 use std::process::{Command, Output};
 use serde::{Serialize, Deserialize};
 use std::io::{self, Write};
-
-const WINE_PATH: &str = "/opt/wine-ge-custom-opt/bin/wine";
+use crate::conf::Conf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoolCommand {
@@ -88,14 +87,14 @@ impl Application {
 		}
 	}
 
-	pub fn launch(&mut self) {
+	pub fn launch(&mut self, conf: Conf) {
 		println!("Launching {}", self.name.clone());
 		let output: Output = match self.app_type {
 			AppType::Custom => {
 				self.command.clone().expect("couldn't spawn command").spawn()
 			}
 			AppType::Wine => {
-				Command::new(self::WINE_PATH)
+				Command::new(conf.wine_path)
 					.arg(self.exe_name.clone().expect("couldn't get exe"))
 					.current_dir(self.exe_path.clone().expect("couldn't get directory"))
 					.output().expect("Error: couldn't launch this wine application")
@@ -103,11 +102,5 @@ impl Application {
 		};
 		let _ = io::stdout().write_all(&output.stdout);
         let _ = io::stderr().write_all(&output.stderr);
-	}
-
-	pub fn show(&mut self, ui: &mut egui::Ui) {
-		if ui.button(&self.name).clicked() {
-			self.launch();
-		}
 	}
 }

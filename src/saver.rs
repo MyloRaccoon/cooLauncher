@@ -1,3 +1,4 @@
+use crate::conf::Conf;
 use crate::domain::Application;
 use std::fs::File;
 use std::io::{Write, Read};
@@ -8,26 +9,25 @@ const FILE_PATH: &str = "save.json";
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct LauncherSave {
-	pub apps: Vec<Application>
+	pub apps: Vec<Application>,
+	pub conf: Conf,
 }
 
 impl LauncherSave {
-
-	fn from_vec(apps: &mut [Application]) -> Self {
-		let mut app_saves = Vec::new();
-		for app in apps.iter_mut() {
-			app_saves.push(app.clone());
+	fn new(apps: Vec<Application>, conf: Conf) -> Self {
+		Self { 
+			apps, 
+			conf,
 		}
-		Self { apps: app_saves }
 	}
 }
 
 pub struct Saver;
 
 impl Saver {
-
-	pub fn save(apps: &mut [Application]) -> std::result::Result<(), std::io::Error> {
-		let launcher_save = LauncherSave::from_vec(apps);
+	
+	pub fn save(apps: Vec<Application>, conf: Conf) -> std::result::Result<(), std::io::Error> {
+		let launcher_save = LauncherSave::new(apps, conf);
 		let mut file = File::create(self::FILE_PATH).unwrap();
 		let data = serde_json::to_string(&launcher_save).unwrap();
 		file.write_all(data.as_bytes())
@@ -46,4 +46,5 @@ impl Saver {
 			}
 		}
 	}
+
 }
