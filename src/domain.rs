@@ -43,12 +43,6 @@ pub struct Application {
 	pub exe_name: Option<String>,
 }
 
-pub struct WineApp {
-	pub name: String,
-	pub exe_path: String,
-	pub exe_name: String,
-}
-
 impl Default for Application {
 	
 	fn default() -> Self {
