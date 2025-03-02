@@ -28,6 +28,7 @@ fn main() -> Result<(), eframe::Error> {
 #[derive(Debug, Default)]
 struct AddAppPage {
     open: bool,
+    err_message: String,
     c_app_name: String,
     c_app_command: String,
     c_app_arg: String,
@@ -36,6 +37,7 @@ struct AddAppPage {
 impl AddAppPage {
     fn show(&mut self, ui: &mut Ui, apps: &mut Vec<Application>, conf: Conf) {
         ui.heading("Manual command");
+        ui.label(self.err_message.clone());
         ui.horizontal(|ui| {
             ui.label("Name: ");
             ui.add_space(250.);
@@ -55,8 +57,13 @@ impl AddAppPage {
         }
         ui.horizontal(|ui| {
             if ui.button("+ Add application").clicked() {
+
                 if is_name_taken(apps.clone(), self.c_app_name.clone()) {
-                    println!("name taken");
+                    self.err_message = "/!\\ This name is already taken".to_string();
+                } else if self.c_app_name == String::new() {
+                    self.err_message = "/!\\ Please enter a name".to_string();
+                } else if self.c_app_command == String::new() {
+                    self.err_message = "/!\\ Please enter a command".to_string();
                 } else {
                     apps.push(Application::from_strings(self.c_app_name.clone(), self.c_app_command.clone(), &arg_vec));
                     let _ = Saver::save(apps.clone(), conf.clone());
@@ -73,6 +80,7 @@ impl AddAppPage {
 #[derive(Debug, Default)]
 struct AddWineAppPage {
     open: bool,
+    err_message: String,
     c_app_name: String,
     c_file_exe: Option<PathBuf>,
     open_file_dialog: Option<FileDialog>,
@@ -84,6 +92,7 @@ impl AddWineAppPage {
         if conf.is_wine_path_default() {
             ui.label("/!\\ Please set your wine path in your settings");
         } else {
+            ui.label(self.err_message.clone());
             ui.horizontal(|ui| {
                 ui.label("Name: ");
                 ui.add_space(250.);
@@ -117,20 +126,28 @@ impl AddWineAppPage {
             });
             ui.horizontal(|ui| {
                 if ui.button("+ Add application").clicked() {
-                    let app_name = self.c_app_name.clone();
-                    let file_path_buf = self.c_file_exe.clone().unwrap();
-                    let file_path = file_path_buf.as_path();
-                    let exe_name = file_path.file_name().unwrap();
-                    let dir_path = file_path.parent().unwrap();
-                    apps.push(
-                        Application::wine_app(
-                            app_name,
-                            dir_path.to_str().unwrap().to_string(),
-                            exe_name.to_str().unwrap().to_string()
-                        )
-                    );
-                    let _ = Saver::save(apps.clone(), conf.clone());
-                    self.open = false;
+                    if is_name_taken(apps.clone(), self.c_app_name.clone()) {
+                        self.err_message = "/!\\ This name is already taken".to_string();
+                    } else if self.c_app_name == String::new() {
+                        self.err_message = "/!\\ Please enter a name".to_string();
+                    } else if self.c_file_exe.is_none() {
+                        self.err_message = "/!\\ Please choose a .exe file".to_string();
+                    } else {
+                        let app_name = self.c_app_name.clone();
+                        let file_path_buf = self.c_file_exe.clone().unwrap();
+                        let file_path = file_path_buf.as_path();
+                        let exe_name = file_path.file_name().unwrap();
+                        let dir_path = file_path.parent().unwrap();
+                        apps.push(
+                            Application::wine_app(
+                                app_name,
+                                dir_path.to_str().unwrap().to_string(),
+                                exe_name.to_str().unwrap().to_string()
+                            )
+                        );
+                        let _ = Saver::save(apps.clone(), conf.clone());
+                        self.open = false;
+                    }
                 }
                 if ui.button("Cancel").clicked() {
                     self.open = false;
@@ -282,6 +299,7 @@ impl eframe::App for Launcher {
             ui.add_space(10.);
             ui.horizontal(|ui| {
                 if ui.button("+ Add a Custom App").clicked() {
+                    self.add_app_page.err_message = String::new();
                     self.add_app_page.c_app_name = String::new();
                     self.add_app_page.c_app_command = String::new();
                     self.add_app_page.c_app_arg = String::new();
@@ -289,6 +307,7 @@ impl eframe::App for Launcher {
                 }
 
                 if ui.button("+ Add a Wine App").clicked() {
+                    self.add_wine_app_page.err_message = String::new();
                     self.add_wine_app_page.c_app_name = String::new();
                     self.add_wine_app_page.c_file_exe = None;
                     self.add_wine_app_page.open = true;
