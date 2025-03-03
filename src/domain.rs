@@ -71,6 +71,11 @@ impl Application {
 		}
 	}
 
+	pub fn edit_from_strings(&mut self, name: String, command: String, args: &[String]) {
+		self.name = name;
+		self.command = Some(CoolCommand::new(command, args));
+	}
+
 	pub fn wine_app(name: String, exe_path: String, exe_name: String) -> Self {
 		Self {
 			name,
