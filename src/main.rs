@@ -229,9 +229,9 @@ impl EditAppPage {
         }
     }
 
-    fn show(&mut self, ui: &mut Ui, app: &mut Application, apps: Vec<Application>, conf: Conf, ctx: &egui::Context) {
+    fn show(&mut self, ui: &mut Ui, apps: Vec<Application>, app: &mut Application, conf: Conf, ctx: &egui::Context) {
         ui.heading(app.name.clone());
-        
+        ui.label(self.err_message.clone());
         ui.horizontal(|ui| {
             ui.label("Name: ");
             ui.add(egui::TextEdit::singleline(&mut self.app_name));
@@ -314,7 +314,7 @@ pub struct Launcher {
     add_app_page: AddAppPage,
     add_wine_app_page: AddWineAppPage,
     edit_app_page: EditAppPage,
-    current_app: Application,
+    current_app_index: usize,
     app_running: bool,
     is_c_app: bool,
 }
@@ -351,6 +351,10 @@ impl Launcher {
 
     fn is_page_open(&self) -> bool {
         self.add_app_page.open || self.add_wine_app_page.open || self.edit_app_page.open
+    }
+
+    fn clone_current_app(&self) -> Application {
+        self.apps[self.current_app_index].clone()
     }
 }
 
@@ -397,7 +401,7 @@ impl eframe::App for Launcher {
         if self.edit_app_page.open {
             Window::new("Edit App")
                 .show(ctx, |ui| {
-                    self.edit_app_page.show(ui, &mut self.current_app.clone(), self.apps.clone(), self.conf.clone(), ctx);
+                    self.edit_app_page.show(ui, self.apps.clone(), &mut self.apps[self.current_app_index], self.conf.clone(), ctx);
                 });
         }
 
@@ -437,10 +441,10 @@ impl eframe::App for Launcher {
             }
             ui.add_space(10.);
             ScrollArea::vertical().show(ui, |ui| {
-                for app in self.apps.iter_mut() {
+                for app in self.apps.clone().iter_mut() {
                     if ui.button(app.name.clone()).clicked() {
                         self.is_c_app = true;
-                        self.current_app = app.clone();
+                        self.current_app_index = self.apps.iter().position(|c_app| c_app.name == app.name.clone()).unwrap();
                     }
                 }
             });
@@ -451,24 +455,24 @@ impl eframe::App for Launcher {
                 ui.disable();
             }
             if self.is_c_app {
-                ui.heading(self.current_app.name.clone());
-                match self.current_app.app_type.clone() {
+                ui.heading(self.clone_current_app().name.clone());
+                match self.clone_current_app().app_type.clone() {
                     AppType::Custom => ui.label("App type: Custom"),
                     AppType::Wine => ui.label("App type: Wine"),
                 };
                 ui.horizontal(|ui| {
                     if ui.button("Run").clicked() {
                         self.app_running = true;
-                        self.current_app.launch(self.conf.clone());
+                        self.clone_current_app().launch(self.conf.clone());
                         self.app_running = false;
                     }
                     if ui.button("Remove").clicked() {
                         self.is_c_app = false;
-                        self.remove_app(self.current_app.clone());
+                        self.remove_app(self.clone_current_app().clone());
                         let _ = Saver::save(self.apps.clone(), self.conf.clone());
                     }
                     if ui.button("Edit").clicked() {
-                        self.edit_app_page.set_current_app(&mut self.current_app);
+                        self.edit_app_page.set_current_app(&mut self.apps[self.current_app_index]);
                         self.edit_app_page.open = true;
                     }
                 });

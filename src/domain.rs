@@ -56,7 +56,6 @@ impl Default for Application {
 	}
 }
 
-
 impl Application {
 
 	pub fn from_strings(name: String, command: String, args: &[String]) -> Self {
