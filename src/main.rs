@@ -1,5 +1,6 @@
 use coolauncher::conf::{Conf};
 use coolauncher::domain::{AppType, Application};
+use coolauncher::pages::add_alias_page::AddAliasPage;
 use coolauncher::pages::add_app_page::AddAppPage;
 use coolauncher::pages::add_wine_app_page::AddWineAppPage;
 use coolauncher::pages::edit_app_page::EditAppPage;
@@ -35,6 +36,7 @@ pub struct Launcher {
     add_app_page: AddAppPage,
     add_wine_app_page: AddWineAppPage,
     edit_app_page: EditAppPage,
+    add_alias_page: AddAliasPage,
     current_app_index: usize,
     app_running: bool,
     is_c_app: bool,
@@ -71,7 +73,7 @@ impl Launcher {
     }
 
     fn is_page_open(&self) -> bool {
-        self.add_app_page.open || self.add_wine_app_page.open || self.edit_app_page.open
+        self.add_app_page.open || self.add_wine_app_page.open || self.edit_app_page.open || self.add_alias_page.open
     }
 
     fn clone_current_app(&self) -> Application {
@@ -117,6 +119,13 @@ impl eframe::App for Launcher {
                 });
         }
 
+        if self.add_alias_page.open {
+            Window::new("Add Alias")
+                .show(ctx, |ui| {
+                    self.add_alias_page.show(ui, &mut self.apps[self.current_app_index], self.conf.clone());
+                });
+        }
+
         TopBottomPanel::top("top_panel0").show(ctx, |ui| {
             if self.is_page_open() {
                 ui.disable();
@@ -140,7 +149,14 @@ impl eframe::App for Launcher {
                     self.add_wine_app_page.open = true;
                 }
                 if ui.button("Settings").clicked() {
-                    self.setting_page.wine_file = Some(PathBuf::from(&self.conf.wine_path));
+                    self.setting_page.wine_file = match self.conf.is_wine_path_default() {
+                        true => None,
+                        false => Some(PathBuf::from(&self.conf.wine_path)),
+                    };
+                    self.setting_page.alias_file = match self.conf.is_alias_path_default() {
+                        true => None,
+                        false => Some(PathBuf::from(&self.conf.alias_path)),
+                    };
                     self.setting_page.open = true;
                 }
             });
@@ -167,25 +183,29 @@ impl eframe::App for Launcher {
                 ui.disable();
             }
             if self.is_c_app {
-                ui.heading(self.clone_current_app().name.clone());
-                match self.clone_current_app().app_type.clone() {
+                let c_app = self.clone_current_app();
+                ui.heading(c_app.name.clone());
+                match c_app.app_type.clone() {
                     AppType::Custom => ui.label("App type: Custom"),
                     AppType::Wine => ui.label("App type: Wine"),
                 };
                 ui.horizontal(|ui| {
                     if ui.button("Run").clicked() {
                         self.app_running = true;
-                        self.clone_current_app().launch(self.conf.clone());
+                        self.apps[self.current_app_index].launch(self.conf.clone());
                         self.app_running = false;
                     }
                     if ui.button("Remove").clicked() {
                         self.is_c_app = false;
-                        self.remove_app(self.clone_current_app().clone());
+                        self.remove_app(c_app.clone());
                         let _ = Saver::save(self.apps.clone(), self.conf.clone());
                     }
                     if ui.button("Edit").clicked() {
                         self.edit_app_page.set_current_app(&mut self.apps[self.current_app_index]);
                         self.edit_app_page.open = true;
+                    }
+                    if ui.button("Alias").clicked() {
+                        self.add_alias_page.open = true;
                     }
                 });
             }
