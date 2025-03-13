@@ -35,6 +35,8 @@ impl AddAliasPage {
 		    			self.err_message = "/!\\ this alias is already taken".to_string();
 		    		} else {
 		    			app.create_alias(self.alias.clone(), conf);
+		    			self.err_message = String::new();
+		    			self.alias = String::new();
 		    		}
 		    	}
 		    	if ui.button("close").clicked() {

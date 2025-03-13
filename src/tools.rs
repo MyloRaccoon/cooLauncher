@@ -1,4 +1,5 @@
 use anyhow::Error;
+use regex::Regex;
 
 use crate::domain::Application;
 use std::fs::{self, File};
@@ -18,7 +19,8 @@ pub fn is_alias_taken(alias: String, file: String) -> bool {
     let mut file = File::open(file).unwrap();
     let mut content = String::new();
     file.read_to_string(&mut content).unwrap();
-    content.contains(format!("alias {}", alias.clone()).as_str())
+    let regex = Regex::new(format!("alias *{}[ =]", alias.clone()).as_str()).unwrap();
+    regex.is_match(&content)
 }
 
 pub fn delete_line(line: String, path_string: String) -> core::result::Result<(), Error> {
