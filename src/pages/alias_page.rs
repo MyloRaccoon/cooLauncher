@@ -3,13 +3,13 @@ use egui::Ui;
 use crate::{conf::Conf, domain::Application, tools::is_alias_taken};
 
 #[derive(Debug, Default)]
-pub struct AddAliasPage {
+pub struct AliasPage {
 	pub open: bool,
 	err_message: String,
 	alias: String,
 }
 
-impl AddAliasPage {
+impl AliasPage {
     pub fn show(&mut self, ui: &mut Ui, app: &mut Application, conf: Conf) {
     	if conf.is_alias_path_default() {
     		ui.heading("Please set your alias path in settings.");
@@ -17,7 +17,7 @@ impl AddAliasPage {
     			self.open = false;
     		}
     	} else {
-	    	ui.heading(format!("{} Command Alias", app.name.clone()));
+	    	ui.heading(app.name.clone());
     		for alias in app.alias.clone() {
     			ui.horizontal(|ui| {
     				ui.label(alias.clone());

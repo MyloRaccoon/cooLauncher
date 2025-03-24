@@ -1,16 +1,20 @@
 use coolauncher::conf::{Conf};
 use coolauncher::domain::{AppType, Application};
-use coolauncher::pages::add_alias_page::AddAliasPage;
+use coolauncher::pages::alias_page::AliasPage;
 use coolauncher::pages::add_app_page::AddAppPage;
 use coolauncher::pages::add_wine_app_page::AddWineAppPage;
 use coolauncher::pages::edit_app_page::EditAppPage;
-use coolauncher::saver::{Saver, LauncherSave};
+use coolauncher::pages::gnome_shortcut_page::GnomeShortcutPage;
 use coolauncher::pages::setting_page::SettingsPage;
+use coolauncher::saver::{Saver, LauncherSave};
+use coolauncher::tools::create_gnome_shortcut;
 use eframe::egui;
 use egui::{CentralPanel, ScrollArea, SidePanel, TopBottomPanel, ViewportBuilder, Visuals, Window};
 use std::path::PathBuf;
 
 fn main() -> Result<(), eframe::Error> {
+    create_gnome_shortcut("aaooccff".to_string(), None, "echo hello".to_string());
+
     let mut launcher = Launcher::new();
     launcher.load(Saver::load());
     let options = eframe::NativeOptions{
@@ -36,7 +40,8 @@ pub struct Launcher {
     add_app_page: AddAppPage,
     add_wine_app_page: AddWineAppPage,
     edit_app_page: EditAppPage,
-    add_alias_page: AddAliasPage,
+    alias_page: AliasPage,
+    gnome_shortcut_page: GnomeShortcutPage,
     current_app_index: usize,
     app_running: bool,
     is_c_app: bool,
@@ -73,7 +78,7 @@ impl Launcher {
     }
 
     fn is_page_open(&self) -> bool {
-        self.add_app_page.open || self.add_wine_app_page.open || self.edit_app_page.open || self.add_alias_page.open
+        self.add_app_page.open || self.add_wine_app_page.open || self.edit_app_page.open || self.alias_page.open || self.gnome_shortcut_page.open
     }
 
     fn clone_current_app(&self) -> Application {
@@ -94,7 +99,6 @@ impl eframe::App for Launcher {
                     self.setting_page.show(ui, ctx, self.apps.clone(), &mut self.conf);
                 });
         }
-        self.setting_page.open &= self.setting_page.open;
 
         if self.add_app_page.open {
             Window::new("Add a Custom App")
@@ -102,7 +106,6 @@ impl eframe::App for Launcher {
                     self.add_app_page.show(ui, &mut self.apps, self.conf.clone());
                 });
         }
-        self.add_app_page.open &= self.add_app_page.open;
 
         if self.add_wine_app_page.open {
             Window::new("Add a Wine App")
@@ -110,7 +113,6 @@ impl eframe::App for Launcher {
                     self.add_wine_app_page.show(ui, ctx, &mut self.apps, self.conf.clone());
                 });
         }
-        self.add_wine_app_page.open &= self.add_wine_app_page.open;
 
         if self.edit_app_page.open {
             Window::new("Edit App")
@@ -119,10 +121,17 @@ impl eframe::App for Launcher {
                 });
         }
 
-        if self.add_alias_page.open {
-            Window::new("Add Alias")
+        if self.alias_page.open {
+            Window::new("Command Alias")
                 .show(ctx, |ui| {
-                    self.add_alias_page.show(ui, &mut self.apps[self.current_app_index], self.conf.clone());
+                    self.alias_page.show(ui, &mut self.apps[self.current_app_index], self.conf.clone());
+                });
+        }
+
+        if self.gnome_shortcut_page.open {
+            Window::new("Gnome Shortcut")
+                .show(ctx, |ui| {
+                    self.gnome_shortcut_page.show(ui, &mut self.apps[self.current_app_index], self.conf.clone());
                 });
         }
 
@@ -204,9 +213,17 @@ impl eframe::App for Launcher {
                         self.edit_app_page.set_current_app(&mut self.apps[self.current_app_index]);
                         self.edit_app_page.open = true;
                     }
-                    if ui.button("Alias").clicked() {
-                        self.add_alias_page.open = true;
-                    }
+                    ui.menu_button("Shortcuts", |ui| {
+                        if self.is_page_open() {
+                            ui.disable();
+                        }
+                        if ui.button("Command Alias").clicked() {
+                            self.alias_page.open = true;
+                        }
+                        if ui.button("Gnome Shortcut").clicked() {
+                            self.gnome_shortcut_page.open = true;
+                        }
+                    });
                 });
             }
         });
