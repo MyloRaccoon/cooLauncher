@@ -57,7 +57,7 @@ impl WineCommand {
 	}
 
 	pub fn get_string(&self, conf: Conf) -> String {
-		format!("cd {} && {} {}", self.exe_path, conf.wine_path, self.exe_name)
+		format!("cd \"{}\" && {} \"{}\"", self.exe_path, conf.wine_path, self.exe_name)
 	}
 }
 

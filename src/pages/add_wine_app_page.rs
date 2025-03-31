@@ -76,10 +76,10 @@ impl AddWineAppPage {
                         self.open = false;
                     }
                 }
-                if ui.button("Cancel").clicked() {
-                    self.open = false;
-                }
             });
+        }
+        if ui.button("Cancel").clicked() {
+            self.open = false;
         }
     }
 }

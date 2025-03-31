@@ -13,7 +13,6 @@ use egui::{CentralPanel, ScrollArea, SidePanel, TopBottomPanel, ViewportBuilder,
 use std::path::PathBuf;
 
 fn main() -> Result<(), eframe::Error> {
-    create_gnome_shortcut("aaooccff".to_string(), None, "echo hello".to_string());
 
     let mut launcher = Launcher::new();
     launcher.load(Saver::load());
