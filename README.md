@@ -2,5 +2,10 @@
 
 A command launcher made with eframe::egui
 
+### FEATURES:
+ - Create button for commands
+ - Create button to quickly run apps with wine
+ - Create alias shortcuts your apps 
+
 ### TODO:
  - Create desktop shortcut button (for Gnome first, maybe windows after)
