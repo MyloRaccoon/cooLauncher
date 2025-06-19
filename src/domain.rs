@@ -1,9 +1,11 @@
 use std::process::{Command, Output};
 use std::fs::OpenOptions;
+use std::fs::File;
 use std::io::{self, Write};
+use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
 use crate::conf::Conf;
-use crate::tools::delete_line;
+use crate::tools::{delete_line, get_main_dir};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoolCommand {
@@ -127,7 +129,7 @@ impl Application {
 		}
 	}
 
-	pub fn launch(&mut self, conf: Conf) {
+	pub async fn launch(&mut self, conf: Conf) {
 		println!("Launching {}", self.name.clone());
 		let output: Output = match self.app_type {
 			AppType::Custom => {
@@ -163,5 +165,18 @@ impl Application {
 	pub fn delete_alias(&mut self, alias: String, conf: Conf) {
 		self.alias.retain(|c_alias| c_alias != &alias);
 		delete_line(self.get_alias_line(alias, conf.clone()), conf.clone().alias_path).expect("couln't delete line");
+	}
+
+	pub fn create_script(&self, conf: Conf) -> String {
+		let content = match self.app_type {
+			AppType::Custom => self.command.as_ref().unwrap().get_string(),
+			AppType::Wine => self.wine_command.as_ref().unwrap().get_string(conf),
+		};
+		let mut path = PathBuf::from(&get_main_dir());
+		path.push(self.name.clone());
+		path.set_extension("sh");
+		let mut file = File::create(path.clone()).unwrap();
+		let _ = file.write_all(content.as_bytes());
+		path.to_str().unwrap().to_string()
 	}
 }

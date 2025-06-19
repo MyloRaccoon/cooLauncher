@@ -4,15 +4,19 @@ use coolauncher::pages::alias_page::AliasPage;
 use coolauncher::pages::add_app_page::AddAppPage;
 use coolauncher::pages::add_wine_app_page::AddWineAppPage;
 use coolauncher::pages::edit_app_page::EditAppPage;
-use coolauncher::pages::gnome_shortcut_page::GnomeShortcutPage;
+use coolauncher::pages::gnome_desktop_page::GnomeDesktopPage;
 use coolauncher::pages::setting_page::SettingsPage;
 use coolauncher::saver::{Saver, LauncherSave};
-use coolauncher::tools::create_gnome_shortcut;
+use coolauncher::tools::create_main_dir;
 use eframe::egui;
 use egui::{CentralPanel, ScrollArea, SidePanel, TopBottomPanel, ViewportBuilder, Visuals, Window};
+use tokio::task::JoinHandle;
 use std::path::PathBuf;
 
-fn main() -> Result<(), eframe::Error> {
+#[tokio::main]
+async fn main() -> Result<(), eframe::Error> {
+
+    let _ = create_main_dir();
 
     let mut launcher = Launcher::new();
     launcher.load(Saver::load());
@@ -40,9 +44,10 @@ pub struct Launcher {
     add_wine_app_page: AddWineAppPage,
     edit_app_page: EditAppPage,
     alias_page: AliasPage,
-    gnome_shortcut_page: GnomeShortcutPage,
+    gnome_desktop_page: GnomeDesktopPage,
     current_app_index: usize,
     app_running: bool,
+    running_apps: Vec<JoinHandle<()>>,
     is_c_app: bool,
 }
 
@@ -77,7 +82,7 @@ impl Launcher {
     }
 
     fn is_page_open(&self) -> bool {
-        self.add_app_page.open || self.add_wine_app_page.open || self.edit_app_page.open || self.alias_page.open || self.gnome_shortcut_page.open
+        self.add_app_page.open || self.add_wine_app_page.open || self.edit_app_page.open || self.alias_page.open || self.gnome_desktop_page.open
     }
 
     fn clone_current_app(&self) -> Application {
@@ -89,6 +94,9 @@ impl eframe::App for Launcher {
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if ctx.input(|i| i.viewport().close_requested()) {
+            for apps in &self.running_apps {
+                apps.abort();
+            }
             let _ = Saver::save(self.apps.clone(), self.conf.clone());
         }
 
@@ -127,10 +135,10 @@ impl eframe::App for Launcher {
                 });
         }
 
-        if self.gnome_shortcut_page.open {
+        if self.gnome_desktop_page.open {
             Window::new("Gnome Shortcut")
                 .show(ctx, |ui| {
-                    self.gnome_shortcut_page.show(ui, &mut self.apps[self.current_app_index], self.conf.clone());
+                    self.gnome_desktop_page.show(ui, &mut self.apps[self.current_app_index], self.conf.clone());
                 });
         }
 
@@ -200,7 +208,13 @@ impl eframe::App for Launcher {
                 ui.horizontal(|ui| {
                     if ui.button("Run").clicked() {
                         self.app_running = true;
-                        self.apps[self.current_app_index].launch(self.conf.clone());
+
+                        let mut app_to_launch = self.apps[self.current_app_index].clone();
+                        let conf = self.conf.clone();
+
+                        let handle = tokio::spawn(async move {app_to_launch.launch(conf).await});
+                        self.running_apps.push(handle);
+
                         self.app_running = false;
                     }
                     if ui.button("Remove").clicked() {
@@ -219,9 +233,9 @@ impl eframe::App for Launcher {
                         if ui.button("Command Alias").clicked() {
                             self.alias_page.open = true;
                         }
-                        if ui.button("Gnome Shortcut").clicked() {
-                            self.gnome_shortcut_page.open = true;
-                        }
+                        // if ui.button("Gnome Shortcut").clicked() {
+                        //     self.gnome_desktop_page.open = true;
+                        // }
                     });
                 });
             }

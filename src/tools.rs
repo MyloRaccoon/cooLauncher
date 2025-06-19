@@ -1,5 +1,6 @@
 use anyhow::{Error, Result};
 use regex::Regex;
+use home::home_dir;
 
 use crate::domain::Application;
 use std::fs::{self, File};
@@ -46,7 +47,7 @@ pub fn gnome_shortcut_exists(name: String) -> bool {
     Path::new(&format!("{}{}.desktop", self::APP_DESKTOP_PATH, name)).exists()
 }
 
-pub fn create_gnome_shortcut(name: String, icon: Option<String>, exec: String) -> Result<()> {
+pub fn create_gnome_desktop(name: String, icon: Option<String>, exec: String, terminal:bool) -> Result<()> {
     let path_str = format!("{}{}.desktop", self::APP_DESKTOP_PATH, name);
     let path = Path::new(&path_str);
     if path.exists() {
@@ -54,22 +55,39 @@ pub fn create_gnome_shortcut(name: String, icon: Option<String>, exec: String) -
     }
     let content = match icon {
         Some(icon_name) => format!("
-[Desktop Entry]\n
-Name={name}\n
-Terminal=true\n
-Type=Application\n
-Icon={icon_name}\n
+[Desktop Entry]
+Name={name}
+Terminal={terminal}
+Type=Application
+Icon={icon_name}
 Exec={exec}
 "),
         None => format!("
-[Desktop Entry]\n
-Name={name}\n
-Terminal=true\n
-Type=Application\n
+[Desktop Entry]
+Name={name}
+Terminal={terminal}
+Type=Application
+Icon=coolauncher
 Exec={exec}
 "),
     };
 
     let mut file = File::create(path)?;
     Ok(file.write_all(content.as_bytes())?)
+}
+
+pub fn get_main_dir() -> String {
+    let mut path = home_dir().unwrap();
+    path.push(".coolauncher");
+    path.to_str().unwrap().to_string()
+}
+
+pub fn create_main_dir() -> Result<(), std::io::Error> {
+    let path = get_main_dir();
+    println!("main dir path: {}", get_main_dir());
+    if !Path::new(&path).exists() {
+        fs::create_dir(path)
+    } else {
+        Ok(())
+    }
 }
