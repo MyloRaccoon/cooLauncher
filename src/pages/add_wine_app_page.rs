@@ -1,16 +1,31 @@
 use egui::Ui;
 use egui_file::FileDialog;
 use std::{ffi::OsStr, path::{Path, PathBuf}};
+use home::home_dir;
 use crate::{conf::Conf, domain::Application, saver::Saver, tools::is_name_taken};
 
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct AddWineAppPage {
     pub open: bool,
     pub err_message: String,
     pub c_app_name: String,
     pub c_file_exe: Option<PathBuf>,
     pub open_file_dialog: Option<FileDialog>,
+}
+
+impl Default for AddWineAppPage {
+
+    fn default() -> Self {
+        Self {
+            open: bool::default(),
+            err_message: String::default(),
+            c_app_name: String::default(),
+            c_file_exe: Some(home_dir().unwrap()),
+            open_file_dialog: Option::default(),
+        }
+    }
+
 }
 
 impl AddWineAppPage {

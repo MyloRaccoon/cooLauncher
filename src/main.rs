@@ -61,6 +61,12 @@ impl Launcher {
         self
     }
 
+    fn get_apps_order_name(&self) -> Vec<Application> {
+        let mut res = self.apps.clone();
+        res.sort_by(|a, b| a.name.cmp(&b.name));
+        res
+    }
+
     fn add_app(&mut self, app: Application) {
         self.apps.push(app);
     }
@@ -184,8 +190,28 @@ impl eframe::App for Launcher {
                 ui.disable();
             }
             ui.add_space(10.);
+            ui.menu_button(self.conf.order.clone(), |ui| {
+                if self.is_page_open() {
+                    ui.disable();
+                }
+                if ui.button("Order by add date").clicked() {
+                    self.conf.order = String::from("Order by add date");
+                    ui.disable();
+                }
+                if ui.button("Order by name").clicked() {
+                    self.conf.order = String::from("Order by name");
+                    ui.disable();
+                }
+            });
+            ui.add_space(10.);
             ScrollArea::vertical().show(ui, |ui| {
-                for app in self.apps.clone().iter_mut() {
+                let mut apps: Vec<Application>;
+                if self.conf.order == *"Order by name" {
+                    apps = self.get_apps_order_name();
+                } else {
+                    apps = self.apps.clone();
+                }
+                for app in apps.iter_mut() {
                     if ui.button(app.name.clone()).clicked() {
                         self.is_c_app = true;
                         self.current_app_index = self.apps.iter().position(|c_app| c_app.name == app.name.clone()).unwrap();

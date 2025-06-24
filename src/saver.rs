@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{Write, Read};
 use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
-use serde_json::from_slice;
+use serde_json::{from_slice, Error};
 
 fn get_file_path() -> String {
 	let mut path = PathBuf::from(&get_main_dir());
@@ -45,8 +45,8 @@ impl Saver {
 			Ok(mut file) => {
 				let mut data_bytes = vec![];
 				let _ = file.read_to_end(&mut data_bytes);
-				let launcher_save = from_slice(&data_bytes);
-				launcher_save.unwrap()
+				let launcher_save: Result<LauncherSave, Error> = from_slice(&data_bytes);
+				launcher_save.unwrap_or_default()
 			}
 			Err(_) => {
 				LauncherSave::default()

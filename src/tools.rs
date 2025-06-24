@@ -84,7 +84,7 @@ pub fn get_main_dir() -> String {
 
 pub fn create_main_dir() -> Result<(), std::io::Error> {
     let path = get_main_dir();
-    println!("main dir path: {}", get_main_dir());
+    
     if !Path::new(&path).exists() {
         fs::create_dir(path)
     } else {
