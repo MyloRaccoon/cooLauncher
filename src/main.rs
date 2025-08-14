@@ -47,7 +47,7 @@ pub struct Launcher {
     gnome_desktop_page: GnomeDesktopPage,
     current_app_index: usize,
     app_running: bool,
-    running_apps: Vec<JoinHandle<()>>,
+    // running_apps: Vec<JoinHandle<()>>,
     is_c_app: bool,
 }
 
@@ -100,9 +100,9 @@ impl eframe::App for Launcher {
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         if ctx.input(|i| i.viewport().close_requested()) {
-            for apps in &self.running_apps {
-                apps.abort();
-            }
+            // for apps in &self.running_apps {
+            //     apps.abort();
+            // }
             let _ = Saver::save(self.apps.clone(), self.conf.clone());
         }
 
@@ -185,7 +185,7 @@ impl eframe::App for Launcher {
             ui.add_space(10.);
         });
 
-        SidePanel::left("left_panel0").show(ctx, |ui| {
+        SidePanel::left("left_panel0").default_width(250.0).show(ctx, |ui| {
             if self.is_page_open() {
                 ui.disable();
             }
@@ -239,7 +239,7 @@ impl eframe::App for Launcher {
                         let conf = self.conf.clone();
 
                         let handle = tokio::spawn(async move {app_to_launch.launch(conf).await});
-                        self.running_apps.push(handle);
+                        // self.running_apps.push(handle);
 
                         self.app_running = false;
                     }
@@ -259,9 +259,9 @@ impl eframe::App for Launcher {
                         if ui.button("Command Alias").clicked() {
                             self.alias_page.open = true;
                         }
-                        // if ui.button("Gnome Shortcut").clicked() {
-                        //     self.gnome_desktop_page.open = true;
-                        // }
+                        if ui.button("Gnome Shortcut").clicked() {
+                            self.gnome_desktop_page.open = true;
+                        }
                     });
                 });
             }

@@ -7,7 +7,13 @@ use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
-const APP_DESKTOP_PATH: &str = "/usr/share/applications/";
+// pub fn get_main_dir() -> String {
+//     let mut path = home_dir().unwrap();
+//     path.push(".coolauncher");
+//     path.to_str().unwrap().to_string()
+// }
+
+const APP_DESKTOP_PATH: &str = "/home/mylo/.local/share/applications/";
 
 pub fn is_name_taken(apps: Vec<Application>, app_name: String) -> bool {
     for app in apps {
@@ -61,6 +67,7 @@ Terminal={terminal}
 Type=Application
 Icon={icon_name}
 Exec={exec}
+Categories=Game;
 "),
         None => format!("
 [Desktop Entry]
@@ -69,6 +76,7 @@ Terminal={terminal}
 Type=Application
 Icon=coolauncher
 Exec={exec}
+Categories=Game;
 "),
     };
 

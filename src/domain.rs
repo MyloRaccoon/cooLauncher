@@ -177,6 +177,7 @@ impl Application {
 		path.set_extension("sh");
 		let mut file = File::create(path.clone()).unwrap();
 		let _ = file.write_all(content.as_bytes());
+		let _ = Command::new("chmod").arg("+x").arg(path.clone()).spawn();
 		path.to_str().unwrap().to_string()
 	}
 }
