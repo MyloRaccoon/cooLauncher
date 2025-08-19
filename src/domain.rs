@@ -2,10 +2,10 @@ use std::process::{Command, Output};
 use std::fs::OpenOptions;
 use std::fs::File;
 use std::io::{self, Write};
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use serde::{Serialize, Deserialize};
 use crate::conf::Conf;
-use crate::tools::{delete_line, get_main_dir};
+use crate::tools::{delete_line, get_gnome_desktop_path, get_main_dir};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoolCommand {
@@ -179,5 +179,9 @@ impl Application {
 		let _ = file.write_all(content.as_bytes());
 		let _ = Command::new("chmod").arg("+x").arg(path.clone()).spawn();
 		path.to_str().unwrap().to_string()
+	}
+
+	pub fn gnome_desktop_exists(&self) -> bool {
+		Path::new(&get_gnome_desktop_path(self.name.clone())).exists()
 	}
 }

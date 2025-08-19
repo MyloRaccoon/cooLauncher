@@ -1,7 +1,7 @@
 use anyhow::{Error, Result};
 use regex::Regex;
 use home::home_dir;
-
+use std::process::Command;
 use crate::domain::Application;
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -49,12 +49,12 @@ pub fn delete_line(line: String, path_string: String) -> core::result::Result<()
     Ok(())
 }
 
-pub fn gnome_shortcut_exists(name: String) -> bool {
-    Path::new(&format!("{}{}.desktop", self::APP_DESKTOP_PATH, name)).exists()
+pub fn get_gnome_desktop_path(name: String) -> String {
+    format!("{}{}.desktop", self::APP_DESKTOP_PATH, name)
 }
 
 pub fn create_gnome_desktop(name: String, icon: Option<String>, exec: String, terminal:bool) -> Result<()> {
-    let path_str = format!("{}{}.desktop", self::APP_DESKTOP_PATH, name);
+    let path_str = get_gnome_desktop_path(name.clone());
     let path = Path::new(&path_str);
     if path.exists() {
         panic!("Error: Gnome Desktop Shortcut already exists for the name {}", name.clone());
@@ -82,6 +82,11 @@ Categories=Game;
 
     let mut file = File::create(path)?;
     Ok(file.write_all(content.as_bytes())?)
+}
+
+pub fn remove_gnome_desktop(name: String) -> Result<()> {
+    Command::new("rm").arg(get_gnome_desktop_path(name)).spawn()?;
+    Ok(())
 }
 
 pub fn get_main_dir() -> String {
