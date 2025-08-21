@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use std::path::{PathBuf, Path};
 use serde::{Serialize, Deserialize};
 use crate::conf::Conf;
-use crate::tools::{delete_line, get_gnome_desktop_path, get_main_dir};
+use crate::tools::{delete_line, get_desktop_shortcut_path, get_main_dir};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoolCommand {
@@ -181,7 +181,7 @@ impl Application {
 		path.to_str().unwrap().to_string()
 	}
 
-	pub fn gnome_desktop_exists(&self) -> bool {
-		Path::new(&get_gnome_desktop_path(self.name.clone())).exists()
+	pub fn desktop_shortcut_exists(&self, conf: Conf) -> bool {
+		Path::new(&get_desktop_shortcut_path(self.name.clone(), conf)).exists()
 	}
 }

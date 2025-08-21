@@ -2,18 +2,11 @@ use anyhow::{Error, Result};
 use regex::Regex;
 use home::home_dir;
 use std::process::Command;
+use crate::conf::Conf;
 use crate::domain::Application;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::Path;
-
-// pub fn get_main_dir() -> String {
-//     let mut path = home_dir().unwrap();
-//     path.push(".coolauncher");
-//     path.to_str().unwrap().to_string()
-// }
-
-const APP_DESKTOP_PATH: &str = "/home/mylo/.local/share/applications/";
 
 pub fn is_name_taken(apps: Vec<Application>, app_name: String) -> bool {
     for app in apps {
@@ -49,15 +42,15 @@ pub fn delete_line(line: String, path_string: String) -> core::result::Result<()
     Ok(())
 }
 
-pub fn get_gnome_desktop_path(name: String) -> String {
-    format!("{}{}.desktop", self::APP_DESKTOP_PATH, name)
+pub fn get_desktop_shortcut_path(name: String, conf: Conf) -> String {
+    format!("{}/{}.desktop", conf.gnome_desktop_path, name)
 }
 
-pub fn create_gnome_desktop(name: String, icon: Option<String>, exec: String, terminal:bool) -> Result<()> {
-    let path_str = get_gnome_desktop_path(name.clone());
+pub fn create_desktop_shortcut(name: String, icon: Option<String>, exec: String, terminal:bool, conf: Conf) -> Result<()> {
+    let path_str = get_desktop_shortcut_path(name.clone(), conf);
     let path = Path::new(&path_str);
     if path.exists() {
-        panic!("Error: Gnome Desktop Shortcut already exists for the name {}", name.clone());
+        panic!("Error: Desktop Shortcut already exists for the name {}", name.clone());
     }
     let content = match icon {
         Some(icon_name) => format!("
@@ -66,7 +59,7 @@ Name={name}
 Terminal={terminal}
 Type=Application
 Icon={icon_name}
-Exec={exec}
+Exec=\"{exec}\"
 Categories=Game;
 "),
         None => format!("
@@ -75,7 +68,7 @@ Name={name}
 Terminal={terminal}
 Type=Application
 Icon=coolauncher
-Exec={exec}
+Exec=\"{exec}\"
 Categories=Game;
 "),
     };
@@ -84,8 +77,8 @@ Categories=Game;
     Ok(file.write_all(content.as_bytes())?)
 }
 
-pub fn remove_gnome_desktop(name: String) -> Result<()> {
-    Command::new("rm").arg(get_gnome_desktop_path(name)).spawn()?;
+pub fn remove_desktop_shortcut(name: String, conf: Conf) -> Result<()> {
+    Command::new("rm").arg(get_desktop_shortcut_path(name, conf)).spawn()?;
     Ok(())
 }
 

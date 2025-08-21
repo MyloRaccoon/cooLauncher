@@ -6,7 +6,7 @@ use std::{ffi::OsStr, path::{Path, PathBuf}};
 
 #[derive(Debug, Default)]
 pub struct EditAppPage {
-    pub open: bool,
+    pub is_open: bool,
     err_message: String,
     app_name: String,
     app_command: String,
@@ -16,6 +16,10 @@ pub struct EditAppPage {
 }
 
 impl EditAppPage {
+    pub fn open(&mut self, app: &mut Application) {
+        self.set_current_app(app);
+        self.is_open = true;
+    }
 
     pub fn set_current_app(&mut self, app: &mut Application) {
         self.app_name = app.name.clone();
@@ -84,9 +88,9 @@ impl EditAppPage {
                         } else if self.app_command == String::new() {
                             self.err_message = "/!\\ Please enter a command".to_string();
                         } else {
-                            app.edit_from_strings(self.app_name.clone(), self.app_command.clone(), &[self.app_arg.clone()]);
+                            app.edit_from_strings(self.app_name.clone(), self.app_command.clone(), std::slice::from_ref(&self.app_arg));
                             let _ = Saver::save(apps.clone(), conf.clone());
-                            self.open = false;
+                            self.is_open = false;
                         }
                     }
                     AppType::Wine => {
@@ -101,7 +105,7 @@ impl EditAppPage {
                 }
             }
             if ui.button("Cancel").clicked() {
-                self.open = false;
+                self.is_open = false;
             }
         });
     }

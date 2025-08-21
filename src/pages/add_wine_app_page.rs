@@ -7,18 +7,18 @@ use crate::{conf::Conf, domain::Application, saver::Saver, tools::is_name_taken}
 
 #[derive(Debug)]
 pub struct AddWineAppPage {
-    pub open: bool,
-    pub err_message: String,
-    pub c_app_name: String,
-    pub c_file_exe: Option<PathBuf>,
-    pub open_file_dialog: Option<FileDialog>,
+    pub is_open: bool,
+    err_message: String,
+    c_app_name: String,
+    c_file_exe: Option<PathBuf>,
+    open_file_dialog: Option<FileDialog>,
 }
 
 impl Default for AddWineAppPage {
 
     fn default() -> Self {
         Self {
-            open: bool::default(),
+            is_open: bool::default(),
             err_message: String::default(),
             c_app_name: String::default(),
             c_file_exe: Some(home_dir().unwrap()),
@@ -29,6 +29,13 @@ impl Default for AddWineAppPage {
 }
 
 impl AddWineAppPage {
+    pub fn open(&mut self) {
+        self.err_message = String::new();
+        self.c_app_name = String::new();
+        self.c_file_exe = None;
+        self.is_open = true;
+    }
+
     pub fn show(&mut self, ui: &mut Ui, ctx: &egui::Context, apps: &mut Vec<Application>, conf: Conf) {
         ui.heading("Wine Application");
         if conf.is_wine_path_default() {
@@ -88,13 +95,13 @@ impl AddWineAppPage {
                             )
                         );
                         let _ = Saver::save(apps.clone(), conf.clone());
-                        self.open = false;
+                        self.is_open = false;
                     }
                 }
             });
         }
         if ui.button("Cancel").clicked() {
-            self.open = false;
+            self.is_open = false;
         }
     }
 }

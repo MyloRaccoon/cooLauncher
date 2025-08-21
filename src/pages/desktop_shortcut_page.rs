@@ -1,61 +1,60 @@
 use egui::Ui;
-use egui_file::FileDialog;
-use std::path::PathBuf;
-use crate::{conf::Conf, domain::Application, tools::{create_gnome_desktop, remove_gnome_desktop}};
+use crate::{conf::Conf, domain::Application, tools::{create_desktop_shortcut, remove_desktop_shortcut}};
 
 #[derive(Debug, Default)]
-pub struct GnomeDesktopPage {
-	pub open: bool,
+pub struct DesktopShortcutPage {
+	pub is_open: bool,
 	err_message: String,
-	pub img_file: Option<PathBuf>,
-    pub open_file_dialog: Option<FileDialog>
+	icon_name: String,
 }
 
-impl GnomeDesktopPage {
+impl DesktopShortcutPage {
+	pub fn open(&mut self) {
+		self.is_open = true;
+	}
+
     pub fn show(&mut self, ui: &mut Ui, app: &mut Application, conf: Conf) {
 
     	ui.heading(app.name.clone());
     	ui.label(self.err_message.clone());
 
-    	if app.gnome_desktop_exists() {
+    	if app.desktop_shortcut_exists(conf.clone()) {
     		ui.label("a desktop file already exist for this app's name");
 
     		ui.horizontal(|ui| {
     			if ui.button("Remove it").clicked() {
-    				if remove_gnome_desktop(app.name.clone()).is_err() {
+    				if remove_desktop_shortcut(app.name.clone(), conf.clone()).is_err() {
     					self.err_message = String::from("Error: couln't remove desktop file");
     				} else {
-    					self.open = false;
+    					self.is_open = false;
     				}
     			}
     			if ui.button("Close").clicked() {
-		    		self.open = false;
+		    		self.is_open = false;
 		    	}
     		});
     	} else {
     		ui.horizontal(|ui| {
 	    		ui.label("Icon: ");
-	    		ui.label(
-	    			match &self.img_file {
-	    				Some(path) => path.to_str().unwrap(),
-	    				None => "default"
-	    			}
-	    		);
-	    		ui.button("import image");
+	    		ui.add(egui::TextEdit::singleline(&mut self.icon_name));
 	    	});
 
 	    	ui.horizontal(|ui| {
 	    		if ui.button("Create").clicked() {
-	    			let res = create_gnome_desktop(app.name.clone(), Some("coolauncher".to_string()), app.create_script(conf), false);
+	    			let icon = match !self.icon_name.is_empty() {
+	    				true => Some(self.icon_name.clone()),
+	    				false => None,
+	    			};
+	    			let res = create_desktop_shortcut(app.name.clone(), icon, app.create_script(conf.clone()), false, conf.clone());
 		    		if res.is_err() {
 		    			self.err_message = String::from("Error, couln't create gnome desktop");
 		    		} else {
-		    			self.open = false;
+		    			self.is_open = false;
 		    		}
 		    	}
 
 		    	if ui.button("Close").clicked() {
-		    		self.open = false;
+		    		self.is_open = false;
 		    	}
 	    	});
     	}

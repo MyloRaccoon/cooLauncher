@@ -4,14 +4,22 @@ use crate::{conf::Conf, domain::Application, saver::Saver, tools::is_name_taken}
 
 #[derive(Debug, Default)]
 pub struct AddAppPage {
-    pub open: bool,
-    pub err_message: String,
-    pub c_app_name: String,
-    pub c_app_command: String,
-    pub c_app_arg: String,
+    pub is_open: bool,
+    err_message: String,
+    c_app_name: String,
+    c_app_command: String,
+    c_app_arg: String,
 }
 
 impl AddAppPage {
+    pub fn open(&mut self) {
+        self.err_message = String::new();
+        self.c_app_name = String::new();
+        self.c_app_command = String::new();
+        self.c_app_arg = String::new();
+        self.is_open = true;
+    }
+
     pub fn show(&mut self, ui: &mut Ui, apps: &mut Vec<Application>, conf: Conf) {
         ui.heading("Manual command");
         ui.label(self.err_message.clone());
@@ -44,11 +52,11 @@ impl AddAppPage {
                 } else {
                     apps.push(Application::from_strings(self.c_app_name.clone(), self.c_app_command.clone(), &arg_vec));
                     let _ = Saver::save(apps.clone(), conf.clone());
-                    self.open = false;
+                    self.is_open = false;
                 }
             }
             if ui.button("Cancel").clicked() {
-                self.open = false;
+                self.is_open = false;
             }
         });
     }

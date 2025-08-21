@@ -4,17 +4,21 @@ use crate::{conf::Conf, domain::Application, tools::is_alias_taken};
 
 #[derive(Debug, Default)]
 pub struct AliasPage {
-	pub open: bool,
+	pub is_open: bool,
 	err_message: String,
 	alias: String,
 }
 
 impl AliasPage {
+	pub fn open(&mut self) {
+		self.is_open = true;
+	}
+	
     pub fn show(&mut self, ui: &mut Ui, app: &mut Application, conf: Conf) {
     	if conf.is_alias_path_default() {
     		ui.heading("Please set your alias path in settings.");
     		if ui.button("Close").clicked() {
-    			self.open = false;
+    			self.is_open = false;
     		}
     	} else {
 	    	ui.heading(app.name.clone());
@@ -40,7 +44,7 @@ impl AliasPage {
 		    		}
 		    	}
 		    	if ui.button("close").clicked() {
-		    		self.open = false;
+		    		self.is_open = false;
 		    	}
 	    	});
     	}

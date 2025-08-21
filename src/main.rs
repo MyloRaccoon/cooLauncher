@@ -4,14 +4,12 @@ use coolauncher::pages::alias_page::AliasPage;
 use coolauncher::pages::add_app_page::AddAppPage;
 use coolauncher::pages::add_wine_app_page::AddWineAppPage;
 use coolauncher::pages::edit_app_page::EditAppPage;
-use coolauncher::pages::gnome_desktop_page::GnomeDesktopPage;
+use coolauncher::pages::desktop_shortcut_page::DesktopShortcutPage;
 use coolauncher::pages::setting_page::SettingsPage;
 use coolauncher::saver::{Saver, LauncherSave};
 use coolauncher::tools::create_main_dir;
 use eframe::egui;
 use egui::{CentralPanel, ScrollArea, SidePanel, TopBottomPanel, ViewportBuilder, Visuals, Window};
-use tokio::task::JoinHandle;
-use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() -> Result<(), eframe::Error> {
@@ -44,7 +42,7 @@ pub struct Launcher {
     add_wine_app_page: AddWineAppPage,
     edit_app_page: EditAppPage,
     alias_page: AliasPage,
-    gnome_desktop_page: GnomeDesktopPage,
+    desktop_shortcut_page: DesktopShortcutPage,
     current_app_index: usize,
     app_running: bool,
     // running_apps: Vec<JoinHandle<()>>,
@@ -88,7 +86,11 @@ impl Launcher {
     }
 
     fn is_page_open(&self) -> bool {
-        self.add_app_page.open || self.add_wine_app_page.open || self.edit_app_page.open || self.alias_page.open || self.gnome_desktop_page.open
+        self.add_app_page.is_open || 
+        self.add_wine_app_page.is_open || 
+        self.edit_app_page.is_open || 
+        self.alias_page.is_open || 
+        self.desktop_shortcut_page.is_open
     }
 
     fn clone_current_app(&self) -> Application {
@@ -106,45 +108,45 @@ impl eframe::App for Launcher {
             let _ = Saver::save(self.apps.clone(), self.conf.clone());
         }
 
-        if self.setting_page.open {
+        if self.setting_page.is_open {
             Window::new("Settings")
                 .show(ctx, |ui| {
                     self.setting_page.show(ui, ctx, self.apps.clone(), &mut self.conf);
                 });
         }
 
-        if self.add_app_page.open {
+        if self.add_app_page.is_open {
             Window::new("Add a Custom App")
                 .show(ctx, |ui| {
                     self.add_app_page.show(ui, &mut self.apps, self.conf.clone());
                 });
         }
 
-        if self.add_wine_app_page.open {
+        if self.add_wine_app_page.is_open {
             Window::new("Add a Wine App")
                 .show(ctx, |ui| {
                     self.add_wine_app_page.show(ui, ctx, &mut self.apps, self.conf.clone());
                 });
         }
 
-        if self.edit_app_page.open {
+        if self.edit_app_page.is_open {
             Window::new("Edit App")
                 .show(ctx, |ui| {
                     self.edit_app_page.show(ui, self.apps.clone(), &mut self.apps[self.current_app_index], self.conf.clone(), ctx);
                 });
         }
 
-        if self.alias_page.open {
+        if self.alias_page.is_open {
             Window::new("Command Alias")
                 .show(ctx, |ui| {
                     self.alias_page.show(ui, &mut self.apps[self.current_app_index], self.conf.clone());
                 });
         }
 
-        if self.gnome_desktop_page.open {
-            Window::new("Gnome Shortcut")
+        if self.desktop_shortcut_page.is_open {
+            Window::new("Desktop Shortcut")
                 .show(ctx, |ui| {
-                    self.gnome_desktop_page.show(ui, &mut self.apps[self.current_app_index], self.conf.clone());
+                    self.desktop_shortcut_page.show(ui, &mut self.apps[self.current_app_index], self.conf.clone());
                 });
         }
 
@@ -157,29 +159,13 @@ impl eframe::App for Launcher {
             ui.add_space(10.);
             ui.horizontal(|ui| {
                 if ui.button("+ Add a Custom App").clicked() {
-                    self.add_app_page.err_message = String::new();
-                    self.add_app_page.c_app_name = String::new();
-                    self.add_app_page.c_app_command = String::new();
-                    self.add_app_page.c_app_arg = String::new();
-                    self.add_app_page.open = true;
-                }
+                    self.add_app_page.open();                }
 
                 if ui.button("+ Add a Wine App").clicked() {
-                    self.add_wine_app_page.err_message = String::new();
-                    self.add_wine_app_page.c_app_name = String::new();
-                    self.add_wine_app_page.c_file_exe = None;
-                    self.add_wine_app_page.open = true;
+                    self.add_wine_app_page.open();
                 }
                 if ui.button("Settings").clicked() {
-                    self.setting_page.wine_file = match self.conf.is_wine_path_default() {
-                        true => None,
-                        false => Some(PathBuf::from(&self.conf.wine_path)),
-                    };
-                    self.setting_page.alias_file = match self.conf.is_alias_path_default() {
-                        true => None,
-                        false => Some(PathBuf::from(&self.conf.alias_path)),
-                    };
-                    self.setting_page.open = true;
+                    self.setting_page.open(self.conf.clone());
                 }
             });
             ui.add_space(10.);
@@ -238,8 +224,7 @@ impl eframe::App for Launcher {
                         let mut app_to_launch = self.apps[self.current_app_index].clone();
                         let conf = self.conf.clone();
 
-                        let handle = tokio::spawn(async move {app_to_launch.launch(conf).await});
-                        // self.running_apps.push(handle);
+                        tokio::spawn(async move {app_to_launch.launch(conf).await});
 
                         self.app_running = false;
                     }
@@ -249,18 +234,17 @@ impl eframe::App for Launcher {
                         let _ = Saver::save(self.apps.clone(), self.conf.clone());
                     }
                     if ui.button("Edit").clicked() {
-                        self.edit_app_page.set_current_app(&mut self.apps[self.current_app_index]);
-                        self.edit_app_page.open = true;
+                        self.edit_app_page.open(&mut self.apps[self.current_app_index]);
                     }
                     ui.menu_button("Shortcuts", |ui| {
                         if self.is_page_open() {
                             ui.disable();
                         }
                         if ui.button("Command Alias").clicked() {
-                            self.alias_page.open = true;
+                            self.alias_page.open();
                         }
-                        if ui.button("Gnome Shortcut").clicked() {
-                            self.gnome_desktop_page.open = true;
+                        if ui.button("Desktop Shortcut").clicked() {
+                            self.desktop_shortcut_page.open();
                         }
                     });
                 });
