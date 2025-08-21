@@ -1,8 +1,6 @@
 use anyhow::{Error, Result};
 use regex::Regex;
 use home::home_dir;
-use std::process::Command;
-use crate::conf::Conf;
 use crate::domain::Application;
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -39,46 +37,6 @@ pub fn delete_line(line: String, path_string: String) -> core::result::Result<()
     temp_file.write_all(new_content.as_bytes())?;
 
     fs::rename(temp_path, path)?;
-    Ok(())
-}
-
-pub fn get_desktop_shortcut_path(name: String, conf: Conf) -> String {
-    format!("{}/{}.desktop", conf.gnome_desktop_path, name)
-}
-
-pub fn create_desktop_shortcut(name: String, icon: Option<String>, exec: String, terminal:bool, conf: Conf) -> Result<()> {
-    let path_str = get_desktop_shortcut_path(name.clone(), conf);
-    let path = Path::new(&path_str);
-    if path.exists() {
-        panic!("Error: Desktop Shortcut already exists for the name {}", name.clone());
-    }
-    let content = match icon {
-        Some(icon_name) => format!("
-[Desktop Entry]
-Name={name}
-Terminal={terminal}
-Type=Application
-Icon={icon_name}
-Exec=\"{exec}\"
-Categories=Game;
-"),
-        None => format!("
-[Desktop Entry]
-Name={name}
-Terminal={terminal}
-Type=Application
-Icon=coolauncher
-Exec=\"{exec}\"
-Categories=Game;
-"),
-    };
-
-    let mut file = File::create(path)?;
-    Ok(file.write_all(content.as_bytes())?)
-}
-
-pub fn remove_desktop_shortcut(name: String, conf: Conf) -> Result<()> {
-    Command::new("rm").arg(get_desktop_shortcut_path(name, conf)).spawn()?;
     Ok(())
 }
 

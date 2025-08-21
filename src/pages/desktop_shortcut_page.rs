@@ -1,5 +1,5 @@
 use egui::Ui;
-use crate::{conf::Conf, domain::Application, tools::{create_desktop_shortcut, remove_desktop_shortcut}};
+use crate::{conf::Conf, domain::Application};
 
 #[derive(Debug, Default)]
 pub struct DesktopShortcutPage {
@@ -23,7 +23,7 @@ impl DesktopShortcutPage {
 
     		ui.horizontal(|ui| {
     			if ui.button("Remove it").clicked() {
-    				if remove_desktop_shortcut(app.name.clone(), conf.clone()).is_err() {
+    				if app.remove_desktop_shortcut(conf.clone()).is_err() {
     					self.err_message = String::from("Error: couln't remove desktop file");
     				} else {
     					self.is_open = false;
@@ -45,7 +45,7 @@ impl DesktopShortcutPage {
 	    				true => Some(self.icon_name.clone()),
 	    				false => None,
 	    			};
-	    			let res = create_desktop_shortcut(app.name.clone(), icon, app.create_script(conf.clone()), false, conf.clone());
+	    			let res = app.create_desktop_shortcut(icon, app.create_script(conf.clone()), false, conf.clone());
 		    		if res.is_err() {
 		    			self.err_message = String::from("Error, couln't create gnome desktop");
 		    		} else {
