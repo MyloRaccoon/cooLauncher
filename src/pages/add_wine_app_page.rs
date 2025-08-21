@@ -2,8 +2,7 @@ use egui::Ui;
 use egui_file::FileDialog;
 use std::{ffi::OsStr, path::{Path, PathBuf}};
 use home::home_dir;
-use crate::{conf::Conf, domain::Application, saver::Saver, tools::is_name_taken};
-
+use crate::{conf::Conf, domain::Application, saver::Saver, launcher::is_app_name_taken};
 
 #[derive(Debug)]
 pub struct AddWineAppPage {
@@ -75,7 +74,7 @@ impl AddWineAppPage {
             });
             ui.horizontal(|ui| {
                 if ui.button("+ Add application").clicked() {
-                    if is_name_taken(apps.clone(), self.c_app_name.clone()) {
+                    if is_app_name_taken(apps.clone(), self.c_app_name.clone()) {
                         self.err_message = "/!\\ This name is already taken".to_string();
                     } else if self.c_app_name == String::new() {
                         self.err_message = "/!\\ Please enter a name".to_string();

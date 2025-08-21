@@ -1,6 +1,6 @@
 use egui::Ui;
 
-use crate::{conf::Conf, domain::Application, saver::Saver, tools::is_name_taken};
+use crate::{conf::Conf, domain::Application, launcher::is_app_name_taken, saver::Saver};
 
 #[derive(Debug, Default)]
 pub struct AddAppPage {
@@ -43,7 +43,7 @@ impl AddAppPage {
         ui.horizontal(|ui| {
             if ui.button("+ Add application").clicked() {
 
-                if is_name_taken(apps.clone(), self.c_app_name.clone()) {
+                if is_app_name_taken(apps.clone(), self.c_app_name.clone()) {
                     self.err_message = "/!\\ This name is already taken".to_string();
                 } else if self.c_app_name == String::new() {
                     self.err_message = "/!\\ Please enter a name".to_string();

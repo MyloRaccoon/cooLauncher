@@ -1,7 +1,7 @@
 use egui::Ui;
 use egui_file::FileDialog;
 
-use crate::{conf::Conf, domain::{AppType, Application}, saver::Saver, tools::is_name_taken};
+use crate::{conf::Conf, domain::{AppType, Application}, launcher::is_app_name_taken, saver::Saver};
 use std::{ffi::OsStr, path::{Path, PathBuf}};
 
 #[derive(Debug, Default)]
@@ -81,7 +81,7 @@ impl EditAppPage {
             if ui.button("Save and close").clicked() {
                 match app.app_type {
                     AppType::Custom => {
-                        if is_name_taken(apps.clone(), self.app_name.clone()) {
+                        if is_app_name_taken(apps.clone(), self.app_name.clone()) {
                             self.err_message = "/!\\ This name is already taken".to_string();
                         } else if self.app_name == String::new() {
                             self.err_message = "/!\\ Please enter a name".to_string();
@@ -94,7 +94,7 @@ impl EditAppPage {
                         }
                     }
                     AppType::Wine => {
-                        if is_name_taken(apps.clone(), self.app_name.clone()) {
+                        if is_app_name_taken(apps.clone(), self.app_name.clone()) {
                             self.err_message = "/!\\ This name is already taken".to_string();
                         } else if self.app_name == String::new() {
                             self.err_message = "/!\\ Please enter a name".to_string();

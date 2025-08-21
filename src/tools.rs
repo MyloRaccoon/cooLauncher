@@ -1,18 +1,8 @@
 use anyhow::{Error, Result};
 use home::home_dir;
-use crate::domain::Application;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::Path;
-
-pub fn is_name_taken(apps: Vec<Application>, app_name: String) -> bool {
-    for app in apps {
-        if app.name == app_name {
-            return true;
-        }
-    }
-    false
-}
 
 pub fn delete_line(line: String, path_string: String) -> core::result::Result<(), Error> {
     let path = Path::new(&path_string);

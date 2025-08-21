@@ -66,6 +66,15 @@ impl Launcher {
     }
 }
 
+pub fn is_app_name_taken(apps: Vec<Application>, app_name: String) -> bool {
+    for app in apps {
+        if app.name == app_name {
+            return true;
+        }
+    }
+    false
+}
+
 impl eframe::App for Launcher {
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
