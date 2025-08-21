@@ -1,11 +1,10 @@
 use std::process::{Command, Output};
-use std::fs::OpenOptions;
 use std::fs::File;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
 use crate::conf::Conf;
-use crate::tools::{delete_line, get_main_dir};
+use crate::tools::get_main_dir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoolCommand {
@@ -141,30 +140,6 @@ impl Application {
 		};
 		let _ = io::stdout().write_all(&output.stdout);
         let _ = io::stderr().write_all(&output.stderr);
-	}
-
-	pub fn create_alias(&mut self, alias: String, conf: Conf) {
-		let line = self.get_alias_line(alias.clone(), conf.clone());
-
-		let mut file = OpenOptions::new()
-			.append(true)
-			.open(conf.clone().alias_path)
-			.expect("cant open file");
-
-		file.write_all(line.as_bytes()).expect("write failed");
-		self.alias.push(alias);
-	}
-
-	pub fn get_alias_line(&self, alias: String, conf: Conf) -> String {
-		match self.app_type.clone() {
-			AppType::Custom => format!("\nalias {}='{}'", alias.clone(), self.command.as_ref().unwrap().get_string()),
-    		AppType::Wine => format!("\nalias {}='{}'", alias.clone(), self.wine_command.as_ref().unwrap().get_string(conf)),
-		}
-	}
-
-	pub fn delete_alias(&mut self, alias: String, conf: Conf) {
-		self.alias.retain(|c_alias| c_alias != &alias);
-		delete_line(self.get_alias_line(alias, conf.clone()), conf.clone().alias_path).expect("couln't delete line");
 	}
 
 	pub fn create_script(&self, conf: Conf) -> String {

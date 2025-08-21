@@ -1,6 +1,6 @@
 use egui::Ui;
 
-use crate::{conf::Conf, domain::Application, tools::is_alias_taken};
+use crate::{command_alias::is_alias_taken, conf::Conf, domain::Application};
 
 #[derive(Debug, Default)]
 pub struct AliasPage {

@@ -1,5 +1,4 @@
 use anyhow::{Error, Result};
-use regex::Regex;
 use home::home_dir;
 use crate::domain::Application;
 use std::fs::{self, File};
@@ -13,14 +12,6 @@ pub fn is_name_taken(apps: Vec<Application>, app_name: String) -> bool {
         }
     }
     false
-}
-
-pub fn is_alias_taken(alias: String, file: String) -> bool {
-    let mut file = File::open(file).unwrap();
-    let mut content = String::new();
-    file.read_to_string(&mut content).unwrap();
-    let regex = Regex::new(format!("alias *{}[ =]", alias.clone()).as_str()).unwrap();
-    regex.is_match(&content)
 }
 
 pub fn delete_line(line: String, path_string: String) -> core::result::Result<(), Error> {
