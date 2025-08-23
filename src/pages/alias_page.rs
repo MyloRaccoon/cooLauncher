@@ -1,6 +1,6 @@
 use egui::Ui;
 
-use crate::{command_alias::is_alias_taken, conf::Conf, domain::Application};
+use crate::{conf::Conf, domain::Application, alias_manager::alias_exists};
 
 #[derive(Debug, Default)]
 pub struct AliasPage {
@@ -12,6 +12,8 @@ pub struct AliasPage {
 impl AliasPage {
 	pub fn open(&mut self) {
 		self.is_open = true;
+		self.err_message = String::default();
+		self.alias = String::default();
 	}
 	
     pub fn show(&mut self, ui: &mut Ui, app: &mut Application, conf: Conf) {
@@ -26,7 +28,11 @@ impl AliasPage {
     			ui.horizontal(|ui| {
     				ui.label(alias.clone());
     				if ui.button("delete").clicked() {
-    					app.delete_alias(alias.clone(), conf.clone());
+    					if let Err(e) = app.delete_alias(alias.clone(), conf.clone()) {
+    						self.err_message = e.to_string();
+    					} else {
+    						self.err_message = String::default();
+    					}
     				}
     			});
     		}
@@ -35,12 +41,15 @@ impl AliasPage {
 	    	ui.add(egui::TextEdit::singleline(&mut self.alias));
 	    	ui.horizontal(|ui| {
 		    	if ui.button("+ Add alias").clicked() {
-		    		if is_alias_taken(self.alias.clone(), conf.alias_path.clone()) {
+		    		if alias_exists(self.alias.clone()) {
 		    			self.err_message = "/!\\ this alias is already taken".to_string();
 		    		} else {
-		    			app.create_alias(self.alias.clone(), conf);
-		    			self.err_message = String::new();
-		    			self.alias = String::new();
+		    			if let Err(e) = app.create_alias(self.alias.clone(), conf) {
+		    				self.err_message = e.to_string();
+		    			} else {
+		    				self.err_message = String::default();
+		    			}
+		    			self.alias = String::default();
 		    		}
 		    	}
 		    	if ui.button("close").clicked() {

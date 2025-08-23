@@ -4,9 +4,9 @@ use crate::{conf::Conf, domain::{AppType, Application}, pages::{add_app_page::Ad
 
 #[derive(Debug, Default)]
 pub struct Launcher {
-    conf: Conf,
+    pub conf: Conf,
+    pub apps: Vec<Application>,
     setting_page: SettingsPage,
-    apps: Vec<Application>,
     add_app_page: AddAppPage,
     add_wine_app_page: AddWineAppPage,
     edit_app_page: EditAppPage,

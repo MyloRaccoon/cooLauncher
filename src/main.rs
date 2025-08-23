@@ -11,12 +11,16 @@ async fn main() -> Result<(), eframe::Error> {
 
     let mut launcher = Launcher::new();
     launcher.load(Saver::load());
+
+    let _ = launcher.alias_file_security();
+
     let options = eframe::NativeOptions{
         viewport: ViewportBuilder::default()
             .with_inner_size([1200., 720.])
             .with_position([0., 0.]),
         ..Default::default()
     };
+
     eframe::run_native(
         "cooLauncher",
         options,
