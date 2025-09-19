@@ -18,9 +18,6 @@ impl Application {
         let name = self.name.clone();
         let path_str = self.get_desktop_shortcut_path(conf);
         let path = Path::new(&path_str);
-        if path.exists() {
-            panic!("Error: Desktop Shortcut already exists for the name {}", name);
-        }
         let content = match icon {
             Some(icon_name) => format!("
 [Desktop Entry]

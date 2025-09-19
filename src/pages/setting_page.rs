@@ -90,7 +90,7 @@ impl SettingsPage {
             }
         });
         ui.horizontal(|ui| {
-            ui.label("Gnome Desktop Directory: ");
+            ui.label("Desktop Files Directory: ");
             match self.gnome_desktop_dir.clone() {
                 Some(path_buf) => ui.label(path_buf.as_path().to_str().unwrap()),
                 None => ui.label("Please set a desktop directory"),
